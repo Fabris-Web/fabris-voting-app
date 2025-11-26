@@ -1,118 +1,89 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import { useNavigate } from "react-router-dom";
 import AdminNavbar from "../components/AdminNavbar";
+
+const wrap = {
+  maxWidth: "600px",
+  margin: "0 auto",
+  background: "#fff",
+  padding: "20px",
+  borderRadius: "12px",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+};
 
 export default function AdminAddContenders() {
   const [elections, setElections] = useState([]);
-  const [selectedElection, setSelectedElection] = useState(null);
-  const [contenders, setContenders] = useState([]);
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [message, setMessage] = useState("");
-  const navigate = useNavigate();
+  const [selectedElection, setSelectedElection] = useState("");
 
-  // Fetch all elections
-  const fetchElections = async () => {
-    const { data, error } = await supabase
-      .from("elections")
-      .select("*")
-      .order("start_date", { ascending: true });
-    if (error) console.log(error.message);
-    else setElections(data);
+  const loadElections = async () => {
+    const { data } = await supabase.from("elections").select("*");
+    setElections(data);
   };
 
-  // Fetch contenders for selected election
-  const fetchContenders = async (electionId) => {
-    const { data, error } = await supabase
-      .from("contenders")
-      .select("*")
-      .eq("election_id", electionId);
-    if (error) console.log(error.message);
-    else setContenders(data);
+  const addContender = async () => {
+    if (!name || !selectedElection)
+      return alert("Enter contender name & choose election.");
+
+    await supabase.from("contenders").insert([
+      { election_id: selectedElection, name },
+    ]);
+
+    alert("Contender added!");
+    setName("");
   };
 
   useEffect(() => {
-    fetchElections();
+    loadElections();
   }, []);
 
-  const handleSelectElection = (election) => {
-    setSelectedElection(election);
-    fetchContenders(election.id);
-    setMessage("");
-  };
-
-  const handleAddContender = async () => {
-    if (!selectedElection) return;
-
-    const { error } = await supabase.from("contenders").insert([
-      {
-        election_id: selectedElection.id,
-        name,
-        description,
-      },
-    ]);
-
-    if (error) setMessage(error.message);
-    else {
-      setMessage("Contender added!");
-      setName("");
-      setDescription("");
-      fetchContenders(selectedElection.id);
-    }
-  };
-
   return (
-    <div className="container">
+    <>
       <AdminNavbar />
+      <div style={wrap}>
+        <h2>Add Contenders</h2>
 
-      <h2>Add Contenders</h2>
-      {message && <p>{message}</p>}
+        <label>Choose Election:</label>
+        <select
+          style={{ ...wrap, padding: "10px", marginBottom: "15px" }}
+          onChange={(e) => setSelectedElection(e.target.value)}
+        >
+          <option value="">Select </option>
 
-      {/* Step 1: Select election */}
-      {!selectedElection && (
-        <div>
-          <h3>Select Election</h3>
-          <ul>
-            {elections.map((e) => (
-              <li key={e.id}>
-                {e.title}{" "}
-                <button onClick={() => handleSelectElection(e)}>Select</button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+          {elections.map((el) => (
+            <option key={el.id} value={el.id}>
+              {el.title}
+            </option>
+          ))}
+        </select>
 
-      {/* Step 2: Add contenders for selected election */}
-      {selectedElection && (
-        <div>
-          <h3>Adding contenders for: {selectedElection.title}</h3>
-          <input
-            type="text"
-            placeholder="Contender Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <textarea
-            placeholder="Contender Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <button onClick={handleAddContender}>Add Contender</button>
+        <input
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "20px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+          }}
+          placeholder="Contender name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-          <h4>Current Contenders</h4>
-          <ul>
-            {contenders.map((c) => (
-              <li key={c.id}>{c.name}</li>
-            ))}
-          </ul>
-
-          <button onClick={() => setSelectedElection(null)}>Back to Elections</button>
-        </div>
-      )}
-
-      <button onClick={() => navigate("/admin")}>Back to Admin Dashboard</button>
-    </div>
+        <button
+          style={{
+            background: "#0066ff",
+            color: "white",
+            padding: "10px 15px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+          onClick={addContender}
+        >
+          Add
+        </button>
+      </div>
+    </>
   );
 }

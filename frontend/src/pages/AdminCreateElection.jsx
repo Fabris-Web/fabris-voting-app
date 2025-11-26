@@ -1,59 +1,63 @@
 import { useState } from "react";
 import { supabase } from "../supabaseClient";
-import { useNavigate } from "react-router-dom";
+import AdminNavbar from "../components/AdminNavbar";
+
+const box = {
+  maxWidth: "600px",
+  margin: "0 auto",
+  background: "#fff",
+  padding: "20px",
+  borderRadius: "12px",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+};
+
+const input = {
+  width: "100%",
+  padding: "10px",
+  marginTop: "10px",
+  marginBottom: "20px",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+};
+
+const btn = {
+  background: "#0066ff",
+  color: "white",
+  padding: "10px 15px",
+  border: "none",
+  borderRadius: "8px",
+  cursor: "pointer",
+};
 
 export default function AdminCreateElection() {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [message, setMessage] = useState("");
-  const navigate = useNavigate();
 
-  const handleCreate = async () => {
-    const { error } = await supabase.from("elections").insert([
-      {
-        title,
-        description,
-        start_date: startDate,
-        end_date: endDate,
-      },
-    ]);
+  const createElection = async () => {
+    if (!title) return alert("Title required");
 
-    if (error) setMessage(error.message);
-    else {
-      setMessage("Election created successfully!");
-      // redirect to admin dashboard or contenders page
-      navigate("/admin");
-    }
+    await supabase.from("elections").insert([{ title }]);
+    alert("Election created!");
+
+    setTitle("");
   };
 
   return (
-    <div className="container">
-      <h2>Create Election</h2>
-      {message && <p>{message}</p>}
-      <input
-        type="text"
-        placeholder="Election Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <textarea
-        placeholder="Election Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <input
-        type="datetime-local"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-      />
-      <input
-        type="datetime-local"
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-      />
-      <button onClick={handleCreate}>Create Election</button>
-    </div>
+    <>
+      <AdminNavbar />
+      <div style={box}>
+        <h2>Create New Election</h2>
+
+        <input
+          style={input}
+          placeholder="Election title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+
+        <button style={btn} onClick={createElection}>
+          Create Election
+        </button>
+      </div>
+    </>
   );
 }
